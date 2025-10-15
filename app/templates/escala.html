@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+
+{% block title %}Escala de Tarefas - Gestor de República{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1>Escala de Tarefas</h1>
+        <span class="badge bg-secondary fs-5">Semana {{ semana }} / {{ ano }}</span>
+    </div>
+    {% if current_user.is_gerenciador() %}
+    <a href="{{ url_for('escala.adicionar_tarefa_avulsa', ano=ano, semana=semana) }}" class="btn btn-info">
+        Adicionar Tarefa Avulsa
+    </a>
+    {% endif %}
+</div>
+
+<div class="d-flex justify-content-between mb-4 flex-wrap gap-2">
+    <a href="{{ url_for('escala.ver_escala', ano=semana_anterior.ano, semana=semana_anterior.semana) }}" class="btn btn-outline-primary">&laquo; Semana Anterior</a>
+    <div class="btn-group">
+        <a href="{{ url_for('escala.ver_escala') }}" class="btn btn-outline-secondary">Semana Atual</a>
+        <a href="{{ url_for('escala.historico_escala') }}" class="btn btn-outline-info">Ver Histórico</a>
+        <button id="btn-exportar" class="btn btn-success">Exportar como Imagem</button>
+    </div>
+    <a href="{{ url_for('escala.ver_escala', ano=semana_proxima.ano, semana=semana_proxima.semana) }}" class="btn btn-outline-primary">Próxima Semana &raquo;</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="tabela-escala">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">Tarefa</th>
+                <th scope="col">Responsável</th>
+                <th scope="col" class="text-center">Status</th>
+                {% if current_user.is_gerenciador() %}
+                <th scope="col" class="text-end">Ações</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in tabela %}
+            <tr class="align-middle">
+                <td>{{ item.tarefa }}</td>
+                <td>{{ item.responsavel }}</td>
+                <td class="text-center">
+                    {% if item.status == 'pendente' %}
+                        <a href="{{ url_for('escala.fazer', id_tarefa=item.id) }}" class="btn btn-success btn-sm">Marcar como Feita</a>
+                    {% else %}
+                        <span class="badge bg-primary">Feita</span>
+                    {% endif %}
+                </td>
+                {% if current_user.is_gerenciador() %}
+                <td class="text-end">
+                    <a href="{{ url_for('escala.edit_tarefa_semanal', id_tarefa=item.id) }}" class="btn btn-secondary btn-sm">Editar</a>
+                    {% if item.tipo == 'avulsa' %}
+                    <form action="{{ url_for('escala.deletar_tarefa_semanal', id_tarefa=item.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem a certeza de que deseja remover esta tarefa avulsa?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+                    </form>
+                    {% endif %}
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">Nenhuma tarefa para esta semana.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    document.getElementById('btn-exportar').addEventListener('click', function() {
+        const tabelaParaCapturar = document.getElementById('tabela-escala');
+        html2canvas(tabelaParaCapturar, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `escala-semana-{{ semana }}-{{ ano }}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block title %}Dashboard - República Manager{% endblock %}
+
+{% block content %}
+<!-- Barra de Navegação -->
+<!-- <nav class="navbar navbar-expand-lg navbar-dark bg-dark rounded mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('routes.index') }}">República Manager</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <span class="navbar-text me-3">
+                        Olá, {{ user.username }}!
+                    </span>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link btn btn-danger btn-sm text-white" href="{{ url_for('routes.logout') }}">Sair</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav> -->
+
+<!-- Conteúdo Principal -->
+<div class="p-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">Painel de Controle</h1>
+        <p class="col-md-8 fs-4">Seu nível de acesso é: <strong>{{ user.cargo.capitalize() }}</strong></p>
+        <hr>
+        <p>Aqui você pode gerenciar as tarefas, finanças e outras informações da república.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h2>Ações Rápidas</h2>
+        
+        <div class="list-group">
+            <!-- Link comum a todos os usuários logados -->
+            <a href="{{ url_for('escala.ver_escala') }}" class="list-group-item list-group-item-action">Ver Escala de Tarefas</a>
+
+            <!-- Links que só aparecem se o usuário for Gerenciador ou Admin -->
+            {% if user.is_gerenciador() %}
+                <a href="{{ url_for('tarefas.lista_tarefas') }}" class="list-group-item list-group-item-action">Gerir Tarefas</a>
+                <a href="#" class="list-group-item list-group-item-action disabled">Gerenciar Finanças (Em breve)</a>
+                <a href="{{ url_for('admin.lista_usuarios') }}" class="list-group-item list-group-item-action">Gerenciar Usuários</a>
+            {% else %}
+                 <a href="#" class="list-group-item list-group-item-action disabled">Ver Minhas Finanças (Em breve)</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

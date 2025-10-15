@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block title %}Gerir Tarefas Padrão{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>Gerir Tarefas Padrão</h1>
+        <p class="text-muted">Aqui pode gerir a lista de tarefas que entram na escala de rotação automática.</p>
+    </div>
+    <a href="{{ url_for('tarefas.criar_tarefa') }}" class="btn btn-primary">Adicionar Tarefa Padrão</a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Descrição da Tarefa</th>
+                <th>Tipo</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tarefa in tarefas %}
+            <tr class="align-middle">
+                <td>{{ tarefa.descricao }}</td>
+                <td>
+                    <span class="badge bg-secondary">Rotação Automática</span>
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('tarefas.edit_tarefa', tarefa_id=tarefa.id) }}" class="btn btn-secondary btn-sm">Editar</a>
+                    <form action="{{ url_for('tarefas.deletar_tarefa', tarefa_id=tarefa.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem a certeza de que deseja remover esta tarefa padrão?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Remover</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

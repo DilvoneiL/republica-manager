@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block title %}Login - República Manager{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilo para centralizar o conteúdo na tela */
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+    .main-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh; /* Usa vh para altura da viewport */
+        padding: 0;
+    }
+    .login-form {
+        width: 100%;
+        max-width: 400px;
+        padding: 15px;
+        margin: auto;
+    }
+</style>
+
+<div class="main-container">
+    <div class="login-form text-center">
+        <h1 class="h3 mb-3 fw-normal">República Manager</h1>
+        <h2 class="h5 mb-3 fw-normal">Por favor, faça o login</h2>
+
+        <!-- Seção para mostrar mensagens de erro (flashed messages) -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-danger" role="alert">
+                    {{ messages[0] }}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Formulário de Login -->
+        <form method="POST" action="{{ url_for('routes.login') }}">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Usuário" required>
+                <label for="username">Usuário</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Senha" required>
+                <label for="password">Senha</label>
+            </div>
+
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Entrar</button>
+        </form>
+        <p class="mt-5 mb-3 text-muted">&copy; 2025</p>
+    </div>
+</div>
+{% endblock %}
+

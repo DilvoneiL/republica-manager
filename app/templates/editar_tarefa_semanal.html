@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}Editar Tarefa da Semana{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Editar Tarefa da Semana {{ tarefa.semana }}/{{ tarefa.ano }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('escala.edit_tarefa_semanal', id_tarefa=tarefa.id) }}">
+                    <div class="mb-3">
+                        <label for="descricao" class="form-label">Descrição da Tarefa</label>
+                        <input type="text" class="form-control" id="descricao" name="descricao" value="{{ tarefa.tarefa }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="responsavel" class="form-label">Atribuir a</label>
+                        <select class="form-select" id="responsavel" name="responsavel" required>
+                            <option value="" disabled>Selecione um responsável...</option>
+                            {% for user in usuarios %}
+                                <option value="{{ user.username }}" {% if user.username == tarefa.responsavel %}selected{% endif %}>
+                                    {{ user.username.capitalize() }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('escala.ver_escala', ano=tarefa.ano, semana=tarefa.semana) }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
