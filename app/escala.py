@@ -8,11 +8,11 @@ escala_bp = Blueprint('escala', __name__)
 
 
 # Listas de responsáveis para o cálculo da escala
-responsaveis_original = [
+responsaveis_invertido = [
     "falamansa", "parabrisa", "duposto", "jubileu", 
     "vigarista", "peçarrara", "karcaça", "macale", "serrote", "6bomba"
 ]
-responsaveis_invertido = [
+responsaveis_original = [
     "parabrisa", "falamansa", "jubileu", "duposto", 
     "peçarrara", "vigarista", "macale", "karcaça" ,"6bomba", "serrote"
 ]
