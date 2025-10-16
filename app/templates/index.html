@@ -45,7 +45,7 @@
 
             <!-- Links que só aparecem se o usuário for Gerenciador ou Admin -->
             {% if user.is_gerenciador() %}
-                <a href="{{ url_for('tarefas.lista_tarefas') }}" class="list-group-item list-group-item-action">Gerir Tarefas</a>
+                <!-- <a href="{{ url_for('tarefas.lista_tarefas') }}" class="list-group-item list-group-item-action">Gerir Tarefas</a> -->
                 <a href="#" class="list-group-item list-group-item-action disabled">Gerenciar Finanças (Em breve)</a>
                 <a href="{{ url_for('admin.lista_usuarios') }}" class="list-group-item list-group-item-action">Gerenciar Usuários</a>
             {% else %}
