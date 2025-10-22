@@ -5,6 +5,7 @@ from flask import Flask
 from .models import db, User, Tarefa
 from flask_login import LoginManager
 from dotenv import load_dotenv
+from sqlalchemy.pool import NullPool
 
 load_dotenv()
 
@@ -24,7 +25,7 @@ def create_app():
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'poolclass': NullPool
     }
-    
+
     db.init_app(app)
     
     login_manager = LoginManager()
