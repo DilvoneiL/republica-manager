@@ -12,12 +12,15 @@ def index():
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # CORREÇÃO AQUI: .strip() remove espaços do início e do fim
+        # Pega o username do formulário, remove espaços e converte
         username = request.form.get('username', '').strip()
         password = request.form.get('password')
         
-        username_lower = form.username.data.lower()
-        user = User.query.filter_by(username= username_lower).first()
+        # --- CORREÇÃO AQUI ---
+        # Use a variável 'username' que você acabou de criar
+        username_lower = username.lower()
+        user = User.query.filter_by(username=username_lower).first()
+        # --- FIM DA CORREÇÃO ---
 
         if not user or not user.check_password(password):
             flash('Usuário ou senha inválidos.')
