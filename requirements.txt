@@ -4,3 +4,5 @@ Flask-SQLAlchemy
 gunicorn
 Werkzeug
 SQLAlchemy
+psycopg2-binary
+python-dotenv
