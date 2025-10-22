@@ -1,17 +1,39 @@
-# Libraries
-*.lvlibp
-*.llb
+# --- Arquivos Secretos ---
+# NUNCA envie sua senha do Supabase para o GitHub!
+.env
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+# --- Pasta de Instância do Flask ---
+# Pode conter segredos ou o banco de dados local antigo
+instance/
 
-# Executables
-*.exe
+# --- Cache e Arquivos Gerados pelo Python ---
+# Pastas de cache de "compilação" do Python
+__pycache__/
+*.pyc
+*.pyo
 
-# Metadata
-*.aliases
-*.lvlps
+# --- Banco de Dados Local Antigo ---
+# Ignora o banco de dados SQLite que você usava antes
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Ambiente Virtual (venv) ---
+# Ignora toda a pasta de bibliotecas.
+# Quem baixar seu projeto deve recriá-la usando o requirements.txt
+venv/
+.venv/
+env/
+
+# --- Arquivos de IDE e Sistema ---
+# Cache do VS Code
+.vscode/
+
+# Cache geral (da sua lista)
 .cache/
+
+# Arquivos do macOS
+.DS_Store
+
+# Arquivos do Windows
+Thumbs.db
