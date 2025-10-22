@@ -17,7 +17,7 @@ def login():
         password = request.form.get('password')
         
         username_lower = form.username.data.lower()
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username= username_lower).first()
 
         if not user or not user.check_password(password):
             flash('Usuário ou senha inválidos.')
