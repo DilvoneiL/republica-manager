@@ -5,10 +5,10 @@ from flask import Flask
 from .models import db, User, Tarefa
 from flask_login import LoginManager
 from dotenv import load_dotenv
-from sqlalchemy.pool import NullPool
 
-load_dotenv()
+load_dotenv() # Carrega as variáveis do .env
 
+# A lista de tarefas original agora fica aqui
 TAREFAS_RECORRENTES = [
     "Cozinha Cima", "Cozinha baixo + escadas", "Banheiro baixo + salinha",
     "Sala + Entrada", "Banheiro cima", "Organizar área da stella e limpar varanda",
@@ -19,12 +19,11 @@ def create_app():
     app = Flask(__name__, instance_relative_config=True)
     
     app.config['SECRET_KEY'] = 'uma-chave-secreta-muito-dificil'
+    
+    # Configuração do banco de dados lendo do .env ou das variáveis do Render
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+    
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'poolclass': NullPool
-    }
 
     db.init_app(app)
     
@@ -46,8 +45,8 @@ def create_app():
     from . import tarefas
     app.register_blueprint(tarefas.tarefas_bp)
     
-    # --- MUDANÇA AQUI: Registra o novo comando ---
-    from . import commands  # <-- ADICIONE ESTA LINHA
-    commands.init_app(app)  # <-- ADICIONE ESTA LINHA
+    # Registra o comando 'flask init-db'
+    from . import commands
+    commands.init_app(app)
     
     return app
