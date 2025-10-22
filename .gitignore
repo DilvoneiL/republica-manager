@@ -37,3 +37,8 @@ env/
 
 # Arquivos do Windows
 Thumbs.db
+app/__pycache__/__init__.cpython-310.pyc
+app/__pycache__/admin.cpython-310.pyc
+app/__pycache__/models.cpython-310.pyc
+app/__pycache__/routes.cpython-310.pyc
+app/__pycache__/tarefas.cpython-310.pyc
