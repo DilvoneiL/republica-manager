@@ -18,11 +18,15 @@ TAREFAS_RECORRENTES = [
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
 
-    # --- ADICIONE ESTA LINHA DE DEBUG ---
-    db_uri_from_env = os.environ.get('DATABASE_URL')
-    print(f"--- DEBUG: Tentando usar DATABASE_URL: {db_uri_from_env} ---") 
-    # --- FIM DA LINHA DE DEBUG ---
+    db_uri_from_env = os.getenv('DATABASE_URL')
+    if not db_uri_from_env:
+        raise ValueError("❌ DATABASE_URL não encontrada! Verifique o .env ou as variáveis de ambiente no Render.")
 
+    engine_options = {
+    "pool_pre_ping": True,
+    "connect_args": {"sslmode": "require"}
+}
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri_from_env
     app.config['SECRET_KEY'] = 'uma-chave-secreta-muito-dificil'
     app.config['SQLALCHEMY_DATABASE_URI'] = db_uri_from_env # Use a variável que pegamos
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
