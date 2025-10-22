@@ -16,6 +16,7 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password')
         
+        username_lower = form.username.data.lower()
         user = User.query.filter_by(username=username).first()
 
         if not user or not user.check_password(password):
