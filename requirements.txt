@@ -6,3 +6,4 @@ Werkzeug
 SQLAlchemy
 psycopg2-binary
 python-dotenv
+python-dateutil

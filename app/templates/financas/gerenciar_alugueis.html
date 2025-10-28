@@ -1,0 +1,76 @@
+{% extends "layout.html" %}  {% block content %}
+<div class="container">
+    <h1>Gerenciar Cálculo do Aluguel</h1>
+    <p>
+        Use esta página para definir o valor total do aluguel e a diferença
+        paga por quem está em quarto individual. O sistema calculará
+        automaticamente o valor de cada morador e atualizará suas despesas fixas.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <hr>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Configurações Atuais</h5>
+            
+            <form method="POST" action="{{ url_for('financas.gerenciar_aluguel') }}">
+                <div class="mb-3">
+                    <label for="aluguel_total" class="form-label">Aluguel Total (R$)</label>
+                    <input type="number" step="0.01" class="form-control" 
+                           id="aluguel_total" name="aluguel_total" 
+                           value="{{ config_aluguel.valor | round(2) }}">
+                </div>
+                <div class="mb-3">
+                    <label for="diferenca_individual" class="form-label">Diferença (Individual paga a mais que Compartilhado) (R$)</label>
+                    <input type="number" step="0.01" class="form-control" 
+                           id="diferenca_individual" name="diferenca_individual"
+                           value="{{ config_aluguel.diferenca_individual | round(2) }}">
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar e Recalcular para Todos</button>
+            </form>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Valores Calculados (por pessoa)</h5>
+            
+            {% if valor_individual is not none and valor_compartilhado is not none %}
+                <p>
+                    <strong>Quarto Individual:</strong> 
+                    R$ {{ "%.2f"|format(valor_individual) }}
+                </p>
+                <p>
+                    <strong>Quarto Compartilhado:</strong> 
+                    R$ {{ "%.2f"|format(valor_compartilhado) }}
+                </p>
+
+                <p class="text-muted" style="font-size: 0.9em;">
+                    Base de cálculo: ({{ n_individuais }} quartos individuais) e ({{ n_compartilhados }} quartos compartilhados)
+                </p>
+                <p class="text-muted" style="font-size: 0.9em;">
+                    Verificação: (Individual * {{ n_individuais }}) + (Compartilhado * {{ n_compartilhados }}) = 
+                    R$ {{ "%.2f"|format( (valor_individual * n_individuais) + (valor_compartilhado * n_compartilhados) ) }}
+                    (Total Esperado: R$ {{ "%.2f"|format(config_aluguel.valor) }})
+                </p>
+            {% else %}
+                <p class="text-danger">
+                    Não foi possível calcular os valores. Verifique se existem moradores cadastrados
+                    com 'tipo_quarto' definido ('individual' ou 'compartilhado') e se o 'Aluguel Total' é maior que zero.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

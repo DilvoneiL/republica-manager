@@ -1,0 +1,38 @@
+{# Arquivo: app/templates/admin/adicionar_saldo_caixinha.html #}
+{% extends "layout.html" %}
+
+{% block title %}Adicionar Saldo ao Caixinha{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm rounded-lg border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h1 class="h4 mb-0">Adicionar Saldo Manualmente ao Caixinha (Admin)</h1>
+                </div>
+                <div class="card-body">
+                    {% include '_flash_messages.html' %}
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição (Motivo)</label>
+                            <input type="text" class="form-control" id="descricao" name="descricao" value="{{ descricao or '' }}" placeholder="Ex: Saldo inicial, Correção, etc." required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valor" class="form-label">Valor a Adicionar (R$)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" class="form-control" id="valor" name="valor" value="{{ valor or '' }}" placeholder="Ex: 100,50" required inputmode="decimal">
+                            </div>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-warning text-dark">Adicionar Saldo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

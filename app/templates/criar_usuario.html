@@ -5,47 +5,66 @@
 {% block content %}
 <div class="container mt-4">
     <div class="col-md-8 col-lg-6 mx-auto">
-        
-        <!-- O título muda dependendo se estamos criando ou editando -->
+
         {% if user_alvo %}
             <h1>Editar Usuário: {{ user_alvo.username }}</h1>
         {% else %}
             <h1>Criar Novo Usuário</h1>
         {% endif %}
 
+        {# --- CORREÇÃO: Incluir _flash_messages.html --- #}
+        {% include '_flash_messages.html' %}
+
         <div class="card p-4 mt-3">
-            <!-- O formulário aponta para a rota correta (criar ou editar) -->
             <form method="POST" action="{% if user_alvo %}{{ url_for('admin.edit_usuario', user_id=user_alvo.id) }}{% else %}{{ url_for('admin.criar_usuario') }}{% endif %}">
-                
+
                 <div class="mb-3">
                     <label for="username" class="form-label">Nome de Usuário</label>
-                    <input type="text" class="form-control" id="username" name="username" value="{{ user_alvo.username if user_alvo else '' }}" required>
+                    {# --- CORREÇÃO: Adicionado 'or username' para repopular em caso de erro --- #}
+                    <input type="text" class="form-control" id="username" name="username" value="{{ user_alvo.username if user_alvo else (username or '') }}" required>
                 </div>
-                
+
                 <div class="mb-3">
                     <label for="password" class="form-label">Nova Senha</label>
                     <input type="password" class="form-control" id="password" name="password" {% if not user_alvo %}required{% endif %}>
-                    <!-- Mensagem de ajuda para o caso de edição -->
                     {% if user_alvo %}
                         <div class="form-text">Deixe em branco para não alterar a senha atual.</div>
                     {% endif %}
                 </div>
 
                 <div class="mb-3">
+                    <label for="tipo_quarto" class="form-label">Tipo de Quarto (para Aluguel)</label>
+                    <select class="form-select" id="tipo_quarto" name="tipo_quarto" required>
+                        {# Seleciona o valor do form em caso de erro, senão o do user_alvo ou o primeiro tipo disponível #}
+                        {# --- CORREÇÃO: Usar a variável 'tipo_quarto' passada no erro --- #}
+                        {% set tipo_selecionado = tipo_quarto if tipo_quarto else (user_alvo.tipo_quarto if user_alvo else (tipos_quarto[0] if tipos_quarto else '')) %}
+
+                        <option value="" disabled {% if not tipo_selecionado %}selected{% endif %}>Selecione...</option> {# Opção default #}
+                        {% for tipo in tipos_quarto %}
+                            <option value="{{ tipo }}" {% if tipo == tipo_selecionado %}selected{% endif %}>{{ tipo|capitalize }}</option> {# Mostra capitalizado #}
+                        {% endfor %}
+                        {% if not tipos_quarto %}
+                            <option value="" disabled selected>Erro: Tipos de quarto não definidos</option>
+                        {% endif %}
+                    </select>
+                    {# --- CORREÇÃO AQUI: url_for e texto do link atualizados --- #}
+                    <div class="form-text">Define o tipo de quarto. <a href="{{ url_for('financas.gerenciar_aluguel') }}">Gerenciar cálculo do aluguel aqui</a>.</div>
+                 </div>
+                 <div class="mb-3">
                     <label for="cargo" class="form-label">Cargo</label>
                     <select class="form-select" id="cargo" name="cargo">
-                        <!-- Gerente não pode ver a opção de Admin -->
+                         {# --- CORREÇÃO: Adicionado 'cargo' para repopular em caso de erro --- #}
+                         {% set cargo_selecionado = cargo if cargo else (user_alvo.cargo if user_alvo else 'usuario') %}
                         {% if current_user.is_admin() %}
-                            <option value="admin" {% if user_alvo and user_alvo.cargo == 'admin' %}selected{% endif %}>Administrador</option>
+                            <option value="admin" {% if cargo_selecionado == 'admin' %}selected{% endif %}>Administrador</option>
                         {% endif %}
-                        <option value="gerenciador" {% if user_alvo and user_alvo.cargo == 'gerenciador' %}selected{% endif %}>Gerenciador</option>
-                        <option value="usuario" {% if user_alvo and user_alvo.cargo == 'usuario' %}selected{% endif %}>Usuário</option>
+                        <option value="gerenciador" {% if cargo_selecionado == 'gerenciador' %}selected{% endif %}>Gerenciador</option>
+                        <option value="usuario" {% if cargo_selecionado == 'usuario' %}selected{% endif %}>Usuário</option>
                     </select>
                 </div>
 
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                     <a href="{{ url_for('admin.lista_usuarios') }}" class="btn btn-secondary me-md-2">Cancelar</a>
-                    <!-- O texto do botão também muda -->
                     <button type="submit" class="btn btn-primary">{% if user_alvo %}Salvar Alterações{% else %}Criar Usuário{% endif %}</button>
                 </div>
 
@@ -54,4 +73,3 @@
     </div>
 </div>
 {% endblock %}
-

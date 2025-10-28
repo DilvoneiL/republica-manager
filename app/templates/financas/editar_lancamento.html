@@ -1,0 +1,96 @@
+{# Arquivo: app/templates/financas/editar_lancamento.html #}
+{% extends 'layout.html' %}
+
+{% block title %}Editar Lançamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm rounded-lg border-0">
+                <div class="card-header bg-light">
+                    <h2 class="h4 mb-0">Editar Lançamento</h2>
+                </div>
+                <div class="card-body">
+                    {# Exibe mensagens flash, se houver #}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label">Descrição</label>
+                            <input type="text" class="form-control" id="descricao" name="descricao" value="{{ lancamento.descricao }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valor" class="form-label">Valor (R$)</label>
+                            {# Formata o valor com ponto para exibição no input type="text" #}
+                            <input type="text" class="form-control" id="valor" name="valor" value="{{ '%.2f'|format(lancamento.valor)|replace(',', '.') }}" placeholder="Ex: 10.50" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label">Categoria</label>
+                            <select class="form-select" id="categoria" name="categoria">
+                                {% for cat in categorias %}
+                                <option value="{{ cat }}" {% if cat == lancamento.categoria %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        {# --- INÍCIO DA ATUALIZAÇÃO --- #}
+                        {# Lógica para exibir/editar o pagador (autor) #}
+
+                        {% if current_user.is_gerenciador() %}
+                            {# Gerenciador pode editar o pagador #}
+                            <div class="mb-3">
+                                <label for="pagador" class="form-label fw-bold">Lançar em nome de (Pagador)</label>
+                                <select class="form-select" id="pagador" name="pagador">
+                                    {# Define o valor selecionado. Se o user_id for None, seleciona 'casa'. #}
+                                    {% set pagador_selecionado = lancamento.user_id or 'casa' %}
+                                    
+                                    <option value="casa" {% if pagador_selecionado == 'casa' %}selected{% endif %}>Casa (Pago pelo Caixinha / Ninguém recebe crédito)</option>
+                                    
+                                    {% for user in usuarios_moradores %}
+                                        {# Compara os IDs para selecionar o usuário correto #}
+                                        <option value="{{ user.id }}" {% if pagador_selecionado|string == user.id|string %}selected{% endif %}>{{ user.username }} (Receberá o crédito)</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Altere quem receberá o crédito por este pagamento.</div>
+                            </div>
+                        {% else %}
+                            {# Usuário normal apenas vê quem pagou (que será ele mesmo) #}
+                            <div class="mb-3">
+                                <label class="form-label">Pagador (Autor)</label>
+                                {# CORRIGIDO: Adiciona 'if lancamento.autor else 'Casa'' para evitar erro se for None #}
+                                <input type="text" class="form-control" value="{{ lancamento.autor.username if lancamento.autor else 'Casa (Caixinha)' }}" disabled readonly>
+                            </div>
+                        {% endif %}
+                        {# --- FIM DA ATUALIZAÇÃO --- #}
+
+                         <div class="mb-3">
+                            <label class="form-label">Data Original</label>
+                            <input type="text" class="form-control" value="{{ lancamento.data.strftime('%d/%m/%Y %H:%M') }}" disabled readonly>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            {# Botão para voltar ao dashboard apropriado #}
+                            {% if current_user.is_gerenciador() %}
+                                <a href="{{ url_for('financas.dashboard_tesoureiro') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {% else %}
+                                <a href="{{ url_for('financas.dashboard_usuario') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

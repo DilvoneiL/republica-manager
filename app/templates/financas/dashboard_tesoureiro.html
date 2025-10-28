@@ -1,0 +1,275 @@
+{% extends 'layout.html' %}
+
+{% block title %}Painel Tesoureiro - {{ mes }}/{{ ano }}{% endblock %}
+
+{% block styles %}
+{# Adiciona ícones do Font Awesome (opcional, mas bom para os botões) #}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{# Estilo para caixa de estatísticas simples #}
+<style>
+    .stat-box { padding: 1rem; }
+    /* Cor ajustada para melhor contraste nos cards coloridos */
+    .stat-box h4 { font-size: 0.9rem; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; margin-bottom: 0.5rem;}
+     /* Cor ajustada para cards com fundo claro */
+    .bg-light .stat-box h4 { color: #6c757d; }
+    .stat-box h2 { font-weight: bold; margin-bottom: 0; }
+     /* Estilo para alinhar melhor os botões de ação na lista */
+    .action-buttons { flex-shrink: 0; margin-left: 10px; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h1 class="h3 mb-0">Painel do Tesoureiro - Mês {{ mes }}/{{ ano }}</h1>
+
+        {# O onsubmit agora pergunta pelo mês/ano correto #}
+        <form method="POST" action="{{ url_for('financas.fechar_mes') }}" onsubmit="return confirm('ATENÇÃO: Você tem certeza que deseja fechar o mês {{ mes }}/{{ ano }}? Os saldos serão calculados e o valor do caixinha será adicionado.');">
+            <button type="submit" class="btn btn-danger btn-lg rounded-pill shadow-sm">
+                <i class="fas fa-lock me-1"></i> FECHAR O MÊS
+            </button>
+        </form>
+    </div>
+
+    {% include '_flash_messages.html' %} {# Assume que _flash_messages.html existe em app/templates/ #}
+
+    <div class="row mb-4">
+        {# Total Fixo REAL (sem caixinha) #}
+        <div class="col-lg-3 col-md-6 mb-3"> {# Ajustado grid para melhor responsividade #}
+            <div class="card text-white bg-primary shadow-sm rounded-lg border-0 h-100">
+                <div class="card-body stat-box">
+                    <h5 class="card-title">Total Fixo (Gastos)</h5>
+                    <p class="card-text display-6">R$ {{ "%.2f"|format(total_fixo) }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white bg-warning shadow-sm rounded-lg border-0 h-100">
+                <div class="card-body stat-box">
+                    <h5 class="card-title">Total Variável</h5>
+                    <p class="card-text display-6">R$ {{ "%.2f"|format(total_variavel) }}</p>
+                </div>
+            </div>
+        </div>
+        {# Total GASTO Geral (fixo + variavel) #}
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white bg-dark shadow-sm rounded-lg border-0 h-100">
+                <div class="card-body stat-box">
+                    <h5 class="card-title">Total Gasto Geral</h5>
+                    <p class="card-text display-6">R$ {{ "%.2f"|format(total_gasto_geral) }}</p>
+                </div>
+            </div>
+        </div>
+        {# Total a PAGAR (Gasto + Caixinha) #}
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-white bg-success shadow-sm rounded-lg border-0 h-100">
+                <div class="card-body stat-box">
+                    <h5 class="card-title">Total a Pagar (Rateio)</h5>
+                    <p class="card-text display-6">R$ {{ "%.2f"|format(total_a_pagar) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4 mb-4 shadow-sm rounded-lg border-0">
+        <div class="card-header bg-light">
+            <h3 class="h5 mb-0"><i class="fas fa-cash-register me-2"></i>Gestão do Caixinha</h3>
+        </div>
+        <div class="card-body">
+            <div class="row text-center mb-3">
+                <div class="col-md-4 mb-3">
+                    <div class="stat-box bg-light rounded p-3">
+                        <h4 class="text-muted">Saldo Atual</h4>
+                        <h2 class="text-success">R$ {{ dados_caixinha.saldo_atual|round(2) }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="stat-box bg-light rounded p-3">
+                        <h4 class="text-muted">Arrecadação Mensal</h4>
+                        <h2 class="text-info">R$ {{ dados_caixinha.valor_contribuicao_mensal|round(2) }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="stat-box bg-light rounded p-3">
+                        <h4 class="text-muted">Projeção Próx. Mês</h4>
+                        <h2 class="text-primary">R$ {{ dados_caixinha.projecao_proximo_mes|round(2) }}</h2>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <h4 class="h6">Fazer Retirada</h4>
+            <form method="POST" action="{{ url_for('financas.retirar_da_caixinha') }}" class="row g-3 align-items-end">
+                 <div class="col-md-6">
+                    <label for="descricao_retirada" class="form-label visually-hidden">Descrição da Retirada</label>
+                    <input type="text" class="form-control" id="descricao_retirada" name="descricao_retirada" placeholder="Descrição da Retirada" required>
+                </div>
+                 <div class="col-md-4">
+                    <label for="valor_retirada" class="form-label visually-hidden">Valor (R$)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="text" class="form-control" id="valor_retirada" name="valor_retirada" placeholder="Ex: 20,50" required inputmode="decimal">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-danger w-100"><i class="fas fa-minus-circle me-1"></i>Retirar</button>
+                </div>
+            </form>
+            <hr>
+            <h4 class="h6">Últimas Movimentações</h4>
+            <ul class="list-group list-group-flush">
+                {% for mov in dados_caixinha.movimentacoes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                        <div>
+                            <strong>{{ mov.descricao }}</strong>
+                            <small class="d-block text-muted">
+                                Em: {{ mov.data.strftime('%d/%m/%Y %H:%M') }}
+                                {# Usa usuario_retirada que é o backref criado no modelo CaixinhaMovimentacao #}
+                                {% if mov.usuario_retirada %}
+                                    | Por: {{ mov.usuario_retirada.username }}
+                                {% elif mov.valor > 0 %}
+                                    | (Entrada do Sistema)
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% if mov.valor > 0 %}
+                            <span class="badge bg-success rounded-pill fs-6">+ R$ {{ mov.valor|round(2) }}</span>
+                        {% else %}
+                            <span class="badge bg-danger rounded-pill fs-6">- R$ {{ (mov.valor * -1)|round(2) }}</span>
+                        {% endif %}
+                    </li>
+                {% else %}
+                    <li class="list-group-item text-center text-muted px-0 py-2">Nenhuma movimentação no caixinha ainda.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm rounded-lg h-100 border-0">
+                <div class="card-header bg-light">
+                    <h4 class="h6 mb-0">Gastos Lançados por Morador (Mês Atual)</h4>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for gasto in gastos_por_usuario %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <span>
+                                <strong>{{ gasto.username }}</strong>
+                                <small class="text-muted">(Tipo: {{ gasto.tipo_quarto }})</small> {# Mostra o tipo_quarto #}
+                            </span>
+                            {# Já estava correto no seu template, mas confirmando: #}
+                            <span class="badge bg-dark rounded-pill fs-6">R$ {{ "%.2f"|format(gasto.total_lancado) }}</span>
+                        </li>
+                         {% else %}
+                         <li class="list-group-item text-center text-muted p-3">Nenhum gasto lançado ainda.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm rounded-lg h-100 border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h4 class="h6 mb-0">Todos os Lançamentos Variáveis do Mês</h4>
+                    <a href="{{ url_for('financas.adicionar_gasto') }}" class="btn btn-sm btn-outline-dark rounded-pill">
+                        <i class="fas fa-plus me-1"></i>Adicionar Gasto
+                    </a>
+                </div>
+                <div class="card-body p-0" style="max-height: 400px; overflow-y: auto;">
+                    <ul class="list-group list-group-flush">
+                        {% for l in lancamentos_variaveis %}
+                        <li class="list-group-item p-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1 me-2">
+                                    <span class="fw-bold">R$ {{ "%.2f"|format(l.valor) }}</span> - {{ l.descricao }}
+                                    
+                                    {# --- INÍCIO DA CORREÇÃO --- #}
+                                    {# Esta seção foi simplificada. Removemos o "Gasto Pessoal" (destinatario) #}
+                                    {# e garantimos que 'l.autor' não quebre se for 'None' (pago pela Casa) #}
+                                    <small class="d-block text-muted">
+                                        Lançado por: 
+                                        {% if l.autor %}
+                                            {{ l.autor.username }}
+                                        {% else %}
+                                            Casa (Caixinha)
+                                        {% endif %}
+                                        - {{ l.data.strftime('%d/%m') }} - {{ l.categoria }}
+                                    </small>
+                                    {# --- FIM DA CORREÇÃO --- #}
+
+                                </div>
+                                {# Botões de Ação - Só aparecem se for o autor ou o gerenciador #}
+                                {% if current_user.is_gerenciador() or l.user_id == current_user.id %}
+                                <div class="btn-group btn-group-sm action-buttons">
+                                    <a href="{{ url_for('financas.editar_lancamento', lancamento_id=l.id) }}" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="fas fa-pencil-alt fa-fw"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('financas.deletar_lancamento', lancamento_id=l.id) }}" onsubmit='return confirm("Remover este lançamento de R$ {{ "%.2f"|format(l.valor) }} - " + {{ l.descricao | tojson }} + "?");' class="d-inline">
+                                        <button type="submit" class="btn btn-outline-danger" title="Remover">
+                                            <i class="fas fa-trash-alt fa-fw"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-center text-muted p-3">Nenhum lançamento variável este mês.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm rounded-lg border-0">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h4 class="h6 mb-0">Despesas Fixas Ativas</h4>
+                    <a href="{{ url_for('financas.gerenciar_despesas_fixas') }}" class="btn btn-sm btn-outline-secondary rounded-pill">
+                           <i class="fas fa-cog me-1"></i> Gerenciar
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for d in despesas_fixas %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center p-3 
+                            {% if chave_caixinha in d.descricao %}list-group-item-info{% endif %}
+                            {% if chave_aluguel in d.descricao %}list-group-item-warning{% endif %}">
+                            
+                            <span>
+                                {{ d.descricao }}
+                                
+                                {# --- INÍCIO DA CORREÇÃO --- #}
+                                {# Agora mostramos a quem pertence a despesa, já que o aluguel é individual #}
+                                {% if d.morador %}
+                                    <small class="text-muted">({{ d.morador.username }})</small>
+                                
+                                {# Apenas despesas GERAIS (sem morador) são contribuições #}
+                                {% elif chave_caixinha in d.descricao and not d.morador %}
+                                    <small class="text-muted">(Contribuição Geral)</small>
+                                
+                                {# A 'Config Mestre' do aluguel não deve aparecer aqui (está inativa) #}
+                                {# Mas se aparecer, será marcada #}
+                                {% elif chave_aluguel in d.descricao and not d.morador %}
+                                    <small class="text-danger">(Configuração Mestre - Ignorada no Fechamento)</small>
+                                {% endif %}
+                                {# --- FIM DA CORREÇÃO --- #}
+                            </span>
+                            
+                            <span class="badge bg-primary rounded-pill fs-6">R$ {{ "%.2f"|format(d.valor) }}</span>
+                        </li>
+                         {% else %}
+                         <li class="list-group-item text-center text-muted p-3">Nenhuma despesa fixa ativa cadastrada.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

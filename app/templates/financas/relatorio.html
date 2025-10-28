@@ -1,0 +1,158 @@
+{% extends 'layout.html' %}
+
+{% block title %}Relatório Financeiro - {{ fechamento.mes }}/{{ fechamento.ano }}{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .saldo-positivo { color: green; font-weight: bold; }
+    .saldo-negativo { color: red; font-weight: bold; }
+    .card-header h2 { font-size: 1.5rem; }
+    .table th, .table td { vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h1 class="h3 mb-0">Relatório Financeiro - Mês {{ fechamento.mes }}/{{ fechamento.ano }}</h1>
+        {# *** ADIÇÃO: Botão Reabrir Mês (apenas para gerenciador) *** #}
+        {% if current_user.is_gerenciador() %}
+        <form method="POST" action="{{ url_for('financas.reabrir_mes', fechamento_id=fechamento.id) }}" onsubmit="return confirm('ATENÇÃO: Reabrir o mês {{ fechamento.mes }}/{{ fechamento.ano }} irá DELETAR este relatório e os saldos calculados. Os lançamentos voltarão a ser editáveis. Deseja continuar?');">
+            <button type="submit" class="btn btn-warning rounded-pill shadow-sm">
+                <i class="fas fa-undo me-1"></i> REABRIR MÊS
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    {# *** CORREÇÃO: Caminho do include (removido 'financas/') *** #}
+    {% include '_flash_messages.html' %}
+
+    <div class="card mb-4 shadow-sm rounded-lg border-0">
+        <div class="card-header bg-light">
+            <h2 class="h5 mb-0">Resumo do Mês</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <strong>Total Fixo (Outros):</strong><br> R$ {{ "%.2f"|format(fechamento.total_fixo) }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <strong>Total Variável (Casa):</strong><br> R$ {{ "%.2f"|format(fechamento.total_variavel) }}
+                </div>
+                 <div class="col-md-3 mb-3">
+                    <strong>Total Aluguel Pago:</strong><br> R$ {{ "%.2f"|format(fechamento.total_aluguel_mes) }}
+                </div>
+                 <div class="col-md-3 mb-3">
+                    <strong>Arrecadado p/ Caixinha:</strong><br> R$ {{ "%.2f"|format(fechamento.valor_caixinha_arrecadado) }}
+                </div>
+
+                 <div class="col-md-6 mb-3">
+                     {# Total Gasto Geral = Fixo + Variável + Aluguel #}
+                     <strong>Total Gasto (Geral):</strong><br>
+                     <span class="fs-5 fw-bold text-danger">R$ {{ "%.2f"|format(fechamento.total_fixo + fechamento.total_variavel + fechamento.total_aluguel_mes) }}</span>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm rounded-lg border-0">
+        <div class="card-header bg-light">
+            <h2 class="h5 mb-0">Saldos Individuais</h2>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Morador</th>
+                            <th class="text-center">Quarto</th>
+                            <th class="text-end">Total Lançado (R$)</th>
+                            <th class="text-end">Total Devido (R$)</th>
+                            <th class="text-end">Saldo Final (R$)</th>
+                            <th class="text-center">Status Pagamento</th>
+                            {% if current_user.is_gerenciador() %}
+                                <th class="text-center">Ação (Tesoureiro)</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for saldo in saldos %}
+                        <tr>
+                            <td>{{ saldo.usuario.username }}</td>
+                            <td class="text-center">{{ saldo.usuario.tipo_quarto }}</td>
+                            <td class="text-end">{{ "%.2f"|format(saldo.total_gasto) }}</td>
+                            {# Adiciona tooltip para detalhar o valor devido #}
+                            <td class="text-end" data-bs-toggle="tooltip" title="Aluguel: R$ {{ '%.2f'|format(saldo.valor_devido_aluguel) }} + Gerais: R$ {{ '%.2f'|format(saldo.valor_devido_outros) }} + Pessoais: R$ {{ '%.2f'|format(saldo.valor_devido_pessoais) }}">
+                                {{ "%.2f"|format(saldo.valor_devido) }}
+                            </td>
+                            <td class="text-end {% if saldo.saldo_final >= 0 %}saldo-positivo{% else %}saldo-negativo{% endif %}">
+                                {{ "%.2f"|format(saldo.saldo_final) }}
+                                {% if saldo.saldo_final >= 0 %}
+                                    <small>(a receber)</small>
+                                {% else %}
+                                    <small>(a pagar)</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if saldo.status_pagamento == 'quitado' %}
+                                    <span class="badge bg-success">Quitado</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pendente</span>
+                                {% endif %}
+                            </td>
+                            {# Botão para Tesoureiro quitar/desquitar #}
+                            {% if current_user.is_gerenciador() %}
+                                <td class="text-center">
+                                    <form method="POST" action="{{ url_for('financas.quitar_saldo', saldo_id=saldo.id) }}" class="d-inline">
+                                        {% if saldo.status_pagamento == 'pendente' %}
+                                            <button type="submit" class="btn btn-sm btn-success" title="Marcar como Quitado">
+                                                <i class="fas fa-check-circle fa-fw"></i> Quitar
+                                            </button>
+                                        {% else %}
+                                             <button type="submit" class="btn btn-sm btn-warning text-dark" title="Marcar como Pendente"> {# Adicionado text-dark para contraste #}
+                                                <i class="fas fa-times-circle fa-fw"></i> Desquitar
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                </td>
+                            {% endif %}
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="{% if current_user.is_gerenciador() %}7{% else %}6{% endif %}" class="text-center text-muted p-3">
+                                Nenhum saldo encontrado para este fechamento.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+     {# Link para voltar ao histórico #}
+     <div class="mt-4">
+        <a href="{{ url_for('financas.historico_financeiro') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Voltar para Histórico
+        </a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Ativa os tooltips do Bootstrap (para mostrar o detalhe do valor devido)
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+  // Garante que o bootstrap.Tooltip está carregado
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+  }
+  return null;
+})
+</script>
+{% endblock %}

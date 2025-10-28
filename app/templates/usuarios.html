@@ -7,7 +7,9 @@
     <h1>Gerenciar Usuários</h1>
     <a href="{{ url_for('admin.criar_usuario') }}" class="btn btn-primary">Adicionar Novo Usuário</a>
 </div>
-
+{% if current_user.is_admin() %}
+  <a href="{{ url_for('admin.adicionar_saldo_caixinha_manual') }}">Adicionar Saldo Caixinha</a>
+{% endif %}
 <!-- Seção para mostrar mensagens de feedback (flashed messages) -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -27,6 +29,7 @@
                 <th scope="col">ID</th>
                 <th scope="col">Nome de Usuário</th>
                 <th scope="col">Cargo</th>
+                <th scope="col">Tipo Quarto</th>
                 <th scope="col" class="text-end">Ações</th>
             </tr>
         </thead>
@@ -36,6 +39,7 @@
                 <th scope="row">{{ user.id }}</th>
                 <td>{{ user.username }}</td>
                 <td>{{ user.cargo.capitalize() }}</td>
+                <td>{{ user.tipo_quarto }}</td>
                 <td class="text-end">
                     <!-- Botão Editar (visível para Gerentes e Admins) -->
                     <a href="{{ url_for('admin.edit_usuario', user_id=user.id) }}" class="btn btn-secondary btn-sm">Editar</a>

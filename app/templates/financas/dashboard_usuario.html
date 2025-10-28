@@ -1,0 +1,146 @@
+{% extends 'layout.html' %}
+
+{% block title %}Painel Financeiro - {{ mes }}/{{ ano }}{% endblock %}
+
+{% block styles %}
+{# Adiciona ícones do Font Awesome (opcional) #}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{# Estilo para caixa de estatísticas simples #}
+<style>
+    .stat-box { padding: 1rem; }
+    /* Cor ajustada para cards com fundo claro */
+    .bg-light .stat-box h4 { color: #6c757d; }
+    .stat-box h2 { font-weight: bold; margin-bottom: 0; }
+     /* Estilo para alinhar melhor os botões de ação na lista */
+    .action-buttons { flex-shrink: 0; margin-left: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 mb-4">Painel Financeiro Pessoal - Mês {{ mes }}/{{ ano }}</h1>
+
+    {% include '_flash_messages.html' %} {# Assume que _flash_messages.html existe em app/templates/ #}
+
+    <div class="row">
+        {# Coluna Principal (Gastos) #}
+        <div class="col-lg-8 mb-4">
+            <div class="card text-white bg-dark mb-3 shadow-sm rounded-lg border-0">
+                <div class="card-body">
+                    <h5 class="card-title">Seu Total Gasto no Mês</h5>
+                    <p class="card-text display-6">R$ {{ "%.2f"|format(total_gasto) }}</p>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Seus Lançamentos</h2>
+                <a href="{{ url_for('financas.adicionar_gasto') }}" class="btn btn-dark rounded-pill">
+                    <i class="fas fa-plus-circle me-1"></i> Adicionar Novo Gasto
+                </a>
+            </div>
+
+            <div class="card shadow-sm rounded-lg border-0">
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for gasto in meus_gastos %}
+                        <li class="list-group-item p-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1 me-2"> {# Ocupa espaço disponível #}
+                                    <strong class="d-block">{{ gasto.descricao }}</strong>
+                                    <small class="text-muted">{{ gasto.data.strftime('%d/%m/%Y') }} - {{ gasto.categoria }}</small>
+                                </div>
+                                <span class="badge bg-secondary rounded-pill fs-6 me-3">R$ {{ "%.2f"|format(gasto.valor) }}</span> {# Movido span para antes dos botões #}
+                                
+                                {% if gasto.user_id == current_user.id %}
+                                <div class="btn-group btn-group-sm action-buttons"> {# Classe para não quebrar linha #}
+                                    <a href="{{ url_for('financas.editar_lancamento', lancamento_id=gasto.id) }}" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="fas fa-pencil-alt fa-fw"></i>
+                                    </a>
+                                    
+                                    {# --- INÍCIO DA CORREÇÃO DO ERRO --- #}
+                                    {# O confirm() foi simplificado para evitar erros de sintaxe JS #}
+                                    <form method="POST" action="{{ url_for('financas.deletar_lancamento', lancamento_id=gasto.id) }}" onsubmit='return confirm("Remover " + {{ gasto.descricao | tojson }} + " (R$ {{ "%.2f"|format(gasto.valor) }})?");' class="d-inline">
+                                    {# --- FIM DA CORREÇÃO DO ERRO --- #}
+                                        <button type="submit" class="btn btn-outline-danger" title="Remover">
+                                            <i class="fas fa-trash-alt fa-fw"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-center text-muted p-3">Você ainda não adicionou nenhum gasto este mês.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {# Coluna Lateral (Caixinha) #}
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm rounded-lg border-0 h-100"> {# h-100 para tentar igualar altura #}
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0"><i class="fas fa-cash-register me-2"></i>Caixinha da República</h3>
+                </div>
+                <div class="card-body d-flex flex-column"> {# d-flex flex-column para layout #}
+                    <div class="row text-center mb-3">
+                        <div class="col-12 mb-3"> {# Coluna única para saldo #}
+                            <div class="stat-box bg-light rounded p-3">
+                                <h4 class="text-muted">Saldo Atual</h4>
+                                <h2 class="text-success">R$ {{ dados_caixinha.saldo_atual|round(2) }}</h2>
+                            </div>
+                        </div>
+                         <div class="col-6"> {# Meia coluna #}
+                            <div class="stat-box bg-light rounded p-3">
+                                <h4 class="text-muted">Arrecadação</h4>
+                                <h2 class="text-info fs-5">R$ {{ dados_caixinha.valor_contribuicao_mensal|round(2) }}</h2> {# Fonte menor #}
+                            </div>
+                        </div>
+                        <div class="col-6"> {# Meia coluna #}
+                            <div class="stat-box bg-light rounded p-3">
+                                <h4 class="text-muted">Próx. Mês</h4>
+                                <h2 class="text-primary fs-5">R$ {{ dados_caixinha.projecao_proximo_mes|round(2) }}</h2> {# Fonte menor #}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h4 class="h6 mt-3">Últimas Movimentações</h4>
+                    <div style="max-height: 250px; overflow-y: auto;"> {# Scroll para movimentações #}
+                        <ul class="list-group list-group-flush">
+                            {% for mov in dados_caixinha.movimentacoes %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                                    <div>
+                                        <strong>{{ mov.descricao | truncate(30) }}</strong> {# Truncate para descrições longas #}
+                                        <small class="d-block text-muted">
+                                            {{ mov.data.strftime('%d/%m %H:%M') }}
+                                            
+                                            {# --- INÍCIO DA ATUALIZAÇÃO --- #}
+                                            {# Corrigido de 'mov.usuario' para 'mov.usuario_retirada' #}
+                                            {% if mov.usuario_retirada %}
+                                                | Por: {{ mov.usuario_retirada.username }}
+                                            {% elif mov.valor > 0 %}
+                                                | (Sistema)
+                                            {% endif %}
+                                            {# --- FIM DA ATUALIZAÇÃO --- #}
+                                        </small>
+                                    </div>
+                                    {% if mov.valor > 0 %}
+                                        <span class="badge bg-success rounded-pill fs-6">+R${{ mov.valor|round(2) }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger rounded-pill fs-6">-R${{ (mov.valor * -1)|round(2) }}</span>
+                                    {% endif %}
+                                </li>
+                            {% else %}
+                                <li class="list-group-item text-center text-muted px-0 py-2">Nenhuma movimentação.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            </div>
+    </div>
+</div>
+{% endblock %}

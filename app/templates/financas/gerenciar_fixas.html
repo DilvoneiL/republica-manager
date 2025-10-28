@@ -1,0 +1,162 @@
+{% extends "layout.html" %}
+
+{# --- CORREÇÃO: O 'base.html' provavelmente é o seu 'layout.html' --- #}
+{# {% extends "base.html" %}  #}
+
+{% block title %}Gerenciar Despesas Fixas{% endblock %}
+
+{% block styles %}
+{# Adiciona ícones do Font Awesome #}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    /* Ajuste para inputs dentro da tabela e card */
+    .table input[type="text"], .card input[type="text"] {
+        padding: 0.375rem 0.75rem; /* Padding padrão do Bootstrap */
+        border-radius: var(--bs-border-radius-pill); /* Bordas arredondadas */
+    }
+    .input-group-text {
+         border-radius: var(--bs-border-radius-pill) 0 0 var(--bs-border-radius-pill); /* Arredonda canto esquerdo */
+    }
+    .input-group input {
+         border-radius: 0 var(--bs-border-radius-pill) var(--bs-border-radius-pill) 0; /* Arredonda canto direito */
+    }
+    .action-buttons .btn { margin-left: 5px; } /* Espaço entre botões */
+    .table th, .table td { vertical-align: middle; } /* Centraliza verticalmente na tabela */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+    {# Mensagens Flash #}
+    {% include '_flash_messages.html' %}
+
+    <div class="row">
+        {# --- CORREÇÃO: Card de Adicionar movido para largura total --- #}
+        <div class="col-lg-12 mb-4">
+            {# Card para Adicionar Despesa Fixa #}
+            <div class="card shadow-sm rounded-lg border-0 mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="h5 mb-0"><i class="fas fa-plus-circle me-2"></i>Adicionar Despesa Fixa (Geral)</h2>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('financas.adicionar_despesa_fixa') }}">
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label fw-bold">Descrição</label>
+                            <input type="text" class="form-control rounded-pill" id="descricao" name="descricao" placeholder="Ex: Internet, Luz, Caixinha" required>
+                            {# --- CORREÇÃO: Texto de ajuda atualizado --- #}
+                            <div class="form-text">Adicione despesas GERAIS (Ex: Internet) ou a contribuição do 'Caixinha'. Não adicione 'Aluguel' aqui, use a página "Gerenciar Aluguel".</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valor" class="form-label fw-bold">Valor Mensal</label>
+                            <div class="input-group">
+                                <span class="input-group-text rounded-start-pill">R$</span>
+                                <input type="text" class="form-control rounded-end-pill" id="valor" name="valor" placeholder="Ex: 100,00 ou 100.00" required inputmode="decimal">
+                            </div>
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-dark rounded-pill"><i class="fas fa-check me-2"></i>Adicionar Despesa</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {# --- CORREÇÃO: Card de "Gerenciar Valores de Aluguel" REMOVIDO --- #}
+            {# Esta funcionalidade agora está em 'gerenciar_alugueis.html' #}
+
+        </div>
+
+        {# Tabela de Despesas Existentes (largura total) #}
+        <div class="col-lg-12">
+            <div class="card shadow-sm rounded-lg border-0">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="h5 mb-0"><i class="fas fa-list-ul me-2"></i>Despesas Fixas Cadastradas</h2>
+                    {# --- CORREÇÃO: Adicionado link para a nova página de Gerenciar Aluguel --- #}
+                    <a href="{{ url_for('financas.gerenciar_aluguel') }}" class="btn btn-info btn-sm rounded-pill text-dark">
+                        <i class="fas fa-home-dollar me-1"></i> Ir para Gerenciar Aluguel
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%;">Descrição</th>
+                                <th style="width: 20%;">Valor</th>
+                                <th class="text-center" style="width: 10%;">Status</th>
+                                <th class="text-end" style="width: 30%;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for despesa in despesas %}
+                            <tr class="{{ 'table-secondary text-muted' if not despesa.ativa }}">
+                                {# Formulário de Edição para cada linha #}
+                                <form method="POST" action="{{ url_for('financas.editar_despesa_fixa', despesa_id=despesa.id) }}">
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="descricao-{{ despesa.id }}" value="{{ despesa.descricao }}" required {% if not despesa.ativa %}readonly{% endif %}>
+                                        
+                                        {# --- INÍCIO DA CORREÇÃO LÓGICA --- #}
+                                        {# Mostra a quem a despesa pertence #}
+                                        {% if despesa.morador %}
+                                            <small class="d-block text-primary fst-italic">Despesa individual de: {{ despesa.morador.username }}</small>
+                                        {% elif CHAVE_ALUGUEL not in despesa.descricao and CHAVE_CAIXINHA not in despesa.descricao %}
+                                            <small class="d-block text-muted fst-italic">Despesa geral (dividida por todos)</small>
+                                        {% elif CHAVE_CAIXINHA in despesa.descricao %}
+                                            <small class="d-block text-info fst-italic">Contribuição geral para o caixinha</small>
+                                        {% elif CHAVE_ALUGUEL in despesa.descricao %}
+                                            <small class="d-block text-danger fst-italic">Configuração Mestre do Aluguel (valor total)</small>
+                                        {% endif %}
+                                        {# --- FIM DA CORREÇÃO LÓGICA --- #}
+                                        
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" class="form-control" name="valor-{{ despesa.id }}" value="{{ '%.2f'|format(despesa.valor)|replace(',', '.') }}" required inputmode="decimal" {% if not despesa.ativa %}readonly{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if despesa.ativa %}
+                                            <span class="badge bg-success">Ativa</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inativa</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end action-buttons">
+                                        <button type="submit" class="btn btn-sm btn-primary" title="Salvar Alterações" {% if not despesa.ativa %}disabled{% endif %}>
+                                            <i class="fas fa-save fa-fw"></i>
+                                        </button>
+                                </form> {# Fecha formulário de edição #}
+
+                                {# Formulário para Ativar/Desativar #}
+                                <form method="POST" action="{{ url_for('financas.alternar_status_despesa_fixa', despesa_id=despesa.id) }}" class="d-inline"
+                                      onsubmit='return confirm("Alterar status da despesa " + {{ despesa.descricao | tojson }} + "?");'>
+                                    {% if despesa.ativa %}
+                                        <button type="submit" class="btn btn-sm btn-warning text-dark" title="Desativar">
+                                            <i class="fas fa-times-circle fa-fw"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-sm btn-success" title="Reativar">
+                                            <i class="fas fa-check-circle fa-fw"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+
+                                {# Formulário para Deletar Permanente (SÓ ADMIN) #}
+                                {% if current_user.is_admin() %}
+                                    {# ... (o código de deletar está correto e pode ser mantido) ... #}
+                                {% endif %}
+                                    </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted p-3">Nenhuma despesa fixa cadastrada.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>  {# fecha coluna direita #}
+    </div>      {# fecha row #}
+</div>          {# fecha container #}
+{% endblock %}

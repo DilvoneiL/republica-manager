@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block title %}Adicionar Gasto{% endblock %}
+
+{% block styles %}
+{# Adiciona ícones do Font Awesome #}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+             {% include '_flash_messages.html' %}
+
+            <div class="card shadow-sm rounded-lg border-0">
+                <div class="card-header bg-dark text-white">
+                    <h2 class="h4 mb-0"><i class="fas fa-plus-circle me-2"></i>Adicionar Novo Gasto Variável</h2>
+                </div>
+                <div class="card-body p-4">
+
+                    <form method="POST" action="{{ url_for('financas.adicionar_gasto') }}">
+                        <div class="mb-3">
+                            <label for="descricao" class="form-label fw-bold">Descrição do Gasto</label>
+                            {# Repopula o valor em caso de erro #}
+                            <input type="text" class="form-control" id="descricao" name="descricao" value="{{ descricao or '' }}" required>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="valor" class="form-label fw-bold">Valor Total (R$)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control" id="valor" name="valor" placeholder="Ex: 50,00" value="{{ valor or '' }}" required inputmode="decimal">
+                                </div>
+                                <div class="form-text">Valor total da compra, mesmo se for parcelada.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="num_parcelas" class="form-label fw-bold">Nº de Parcelas</label>
+                                <input type="number" class="form-control" id="num_parcelas" name="num_parcelas" value="{{ num_parcelas or 1 }}" min="1" required>
+                                 <div class="form-text">Mude para 2 ou mais se for compra parcelada. O valor será dividido.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="categoria" class="form-label fw-bold">Categoria</label>
+                            <select class="form-select" id="categoria" name="categoria">
+                                {% set cat_selecionada = categoria or 'Outros' %}
+                                {% for cat in categorias %}
+                                <option value="{{ cat }}" {% if cat == cat_selecionada %}selected{% endif %}>{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# --- INÍCIO: Campo de PAGADOR (Crédito) --- #}
+                        {# Usuário normal não vê isso e lança em seu próprio nome #}
+                        {% if current_user.is_gerenciador() %}
+                        <div class="mb-3">
+                            <label for="pagador" class="form-label fw-bold">Lançar em nome de (Pagador)</label>
+                            {# Nome do select mudado para 'pagador' #}
+                            <select class="form-select" id="pagador" name="pagador">
+                                {% set pagador_selecionado = pagador_selecionado or 'casa' %}
+                                {# *** CORREÇÃO DE TEXTO AQUI *** #}
+                                <option value="casa" {% if pagador_selecionado == 'casa' %}selected{% endif %}>Casa (Pago pelo Caixinha / Ninguém recebe crédito)</option>
+                                {% for user in usuarios_moradores %}
+                                    <option value="{{ user.id }}" {% if pagador_selecionado|string == user.id|string %}selected{% endif %}>{{ user.username }} (Receberá o crédito)</option>
+                                {% endfor %}
+                            </select>
+                             <div class="form-text">Selecione 'Casa' se o gasto foi pago pelo caixinha. Se um morador pagou, selecione o nome dele para que ele receba o crédito no fechamento.</div>
+                        </div>
+                        {% else %}
+                             <div class="alert alert-info small">
+                                <i class="fas fa-info-circle me-1"></i> Este gasto será lançado por <strong>{{ current_user.username }}</strong> e creditado a você no fechamento.
+                            </div>
+                        {% endif %}
+                        {# --- FIM: Campo de PAGADOR --- #}
+
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                             {# Botão para voltar ao dashboard apropriado #}
+                             {% if current_user.is_gerenciador() %}
+                                 <a href="{{ url_for('financas.dashboard_tesoureiro') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                             {% else %}
+                                 <a href="{{ url_for('financas.dashboard_usuario') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                             {% endif %}
+                            <button type="submit" class="btn btn-primary">Adicionar Gasto</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

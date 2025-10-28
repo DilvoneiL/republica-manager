@@ -3,41 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Título dinâmico da página -->
     <title>{% block title %}República Manager{% endblock %}</title>
-    
+
     <!-- Configurações do PWA -->
     <meta name="theme-color" content="#343a40"/>
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    
-    <!-- Ícones para Apple -->
-     <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+
+    <!-- Ícones -->
+    {# Tenta usar .ico, se não existir, usa .png como fallback (navegadores modernos entendem) #}
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico.ico') }}" type="image/x-icon">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
 
     <!-- CSS do Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
+    <!-- Font Awesome (para ícones) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <!-- Bloco para estilos específicos da página -->
     {% block styles %}{% endblock %}
 </head>
-<body>
+<body class="bg-light d-flex flex-column min-vh-100"> {# d-flex e min-vh-100 para empurrar rodapé #}
     <!-- Barra de Navegação para usuários logados -->
     {% if current_user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top"> {# sticky-top para fixar #}
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('routes.index') }}">República Manager</a>
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('routes.index') }}">
+                <img src="{{ url_for('static', filename='icon-192.png') }}" alt="Logo" width="30" height="30" class="d-inline-block align-text-top me-2 rounded-circle">
+                República Manager
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+
+                <!-- Links Principais da Aplicação (Esquerda) -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <span class="navbar-text me-3">
-                            Olá, {{ current_user.username }}!
-                        </span>
+                        {# Adiciona classe 'active' se o endpoint for 'routes.index' #}
+                        <a class="nav-link {% if request.endpoint == 'routes.index' %}active{% endif %}" aria-current="page" href="{{ url_for('routes.index') }}"><i class="fas fa-home fa-fw me-1"></i>Início</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link btn btn-danger btn-sm text-white" href="{{ url_for('routes.logout') }}">Sair</a>
+                         {# Adiciona classe 'active' se o endpoint começar com 'escala.' #}
+                        <a class="nav-link {% if request.endpoint.startswith('escala.') %}active{% endif %}" href="{{ url_for('escala.ver_escala') }}"><i class="fas fa-calendar-alt fa-fw me-1"></i>Escala</a>
+                    </li>
+
+                    <!-- Dropdown Financeiro -->
+                    <li class="nav-item dropdown">
+                         {# Adiciona classe 'active' se o endpoint começar com 'financas.' #}
+                        <a class="nav-link dropdown-toggle {% if request.endpoint.startswith('financas.') %}active{% endif %}" href="#" id="navbarDropdownFinancas" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-wallet fa-fw me-1"></i>Financeiro
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownFinancas">
+                            <li><a class="dropdown-item {% if request.endpoint == 'financas.dashboard' or request.endpoint == 'financas.dashboard_usuario' or request.endpoint == 'financas.dashboard_tesoureiro' %}active{% endif %}" href="{{ url_for('financas.dashboard') }}"><i class="fas fa-tachometer-alt fa-fw me-2"></i>Painel</a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'financas.adicionar_gasto' %}active{% endif %}" href="{{ url_for('financas.adicionar_gasto') }}"><i class="fas fa-plus-circle fa-fw me-2"></i>Adicionar Gasto</a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'financas.dashboard_graficos' %}active{% endif %}" href="{{ url_for('financas.dashboard_graficos') }}"><i class="fas fa-chart-line fa-fw me-2"></i>Gráficos</a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'financas.historico_financeiro' or request.endpoint == 'financas.ver_relatorio' %}active{% endif %}" href="{{ url_for('financas.historico_financeiro') }}"><i class="fas fa-history fa-fw me-2"></i>Histórico</a></li>
+                            {% if current_user.is_gerenciador() %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'financas.gerenciar_despesas_fixas' %}active{% endif %}" href="{{ url_for('financas.gerenciar_despesas_fixas') }}"><i class="fas fa-file-invoice-dollar fa-fw me-2"></i>Gerenciar Fixas</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+
+                    <!-- Link de Admin (Usuários) -->
+                    {% if current_user.is_gerenciador() %}
+                    <li class="nav-item">
+                         {# Adiciona classe 'active' se o endpoint começar com 'admin.' #}
+                        <a class="nav-link {% if request.endpoint.startswith('admin.') %}active{% endif %}" href="{{ url_for('admin.lista_usuarios') }}"><i class="fas fa-users-cog fa-fw me-1"></i>Usuários</a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- Links de Usuário (Direita) -->
+                <ul class="navbar-nav ms-auto">
+                     {# Dropdown do Usuário #}
+                    <li class="nav-item dropdown">
+                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                           <i class="fas fa-user-circle me-1"></i> Olá, {{ current_user.username }}!
+                         </a>
+                         <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="navbarDropdownUser"> {# dropdown-menu-end para alinhar à direita #}
+                             <li><a class="dropdown-item disabled" href="#"><i class="fas fa-user-edit fa-fw me-2"></i>Meu Perfil (Em breve)</a></li> {# Desabilitado temporariamente #}
+                             <li><hr class="dropdown-divider"></li>
+                             <li><a class="dropdown-item text-danger" href="{{ url_for('routes.logout') }}"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Sair</a></li>
+                         </ul>
                     </li>
                 </ul>
             </div>
@@ -46,15 +98,30 @@
     {% endif %}
 
     <!-- Bloco principal onde o conteúdo de cada página será inserido -->
-    <main class="container mt-4">
+    {# Adicionado flex-grow-1 para ocupar espaço e empurrar rodapé #}
+    <main class="container mt-4 mb-5 flex-grow-1">
+
+        <!-- Bloco para Mensagens Flash (Alertas) -->
+        {% include '_flash_messages.html' %}
+
         {% block content %}{% endblock %}
     </main>
 
+     <!-- Rodapé -->
+     {# mt-auto empurra para baixo #}
+    <footer class="bg-dark text-white text-center py-3 mt-auto">
+        <div class="container">
+             {# *** CORREÇÃO AQUI: Ano hardcoded por enquanto *** #}
+             <small>&copy; 2025 República Manager Aldeia</small> {# Ajuste o ano se necessário #}
+        </div>
+    </footer>
+
+
     <!-- Botão de Instalação do PWA -->
-    <button id="install-button" class="btn btn-primary" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-        Instalar App
+    <button id="install-button" class="btn btn-primary btn-lg rounded-circle shadow" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000; width: 60px; height: 60px;">
+        <i class="fas fa-download"></i> {# Ícone de download #}
     </button>
-    
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -72,22 +139,32 @@
             e.preventDefault();
             deferredPrompt = e;
             installButton.style.display = 'block';
+
+             installButton.addEventListener('click', () => { // Removido 'e' desnecessário
+                installButton.style.display = 'none';
+                if (deferredPrompt) { // Verifica se deferredPrompt ainda existe
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('Usuário aceitou a instalação');
+                        } else {
+                            console.log('Usuário recusou a instalação');
+                        }
+                        deferredPrompt = null; // Limpa após o uso
+                    }).catch(err => {
+                         console.error('Erro na escolha do usuário PWA:', err);
+                         deferredPrompt = null; // Limpa em caso de erro
+                    });
+                }
+            });
         });
 
-        installButton.addEventListener('click', (e) => {
-            installButton.style.display = 'none';
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('Usuário aceitou a instalação');
-                } else {
-                    console.log('Usuário recusou a instalação');
-                }
-                deferredPrompt = null;
-            });
+        // Lida com o app já instalado
+        window.addEventListener('appinstalled', (evt) => {
+          console.log('App instalado com sucesso!');
+          installButton.style.display = 'none'; // Esconde o botão se instalar
         });
     </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
-
