@@ -221,7 +221,7 @@ Durante o desenvolvimento deste projeto, foram trabalhados:
 ## 🔗 Deploy
 
 Aplicação disponível em:
-👉 **[https://republica-manager-one.vercel.app]([https://republica-manager-one.vercel.app](https://aldeia.pythonanywhere.com/)**
+👉 **https://aldeia.pythonanywhere.com/**
 
 ---
 
